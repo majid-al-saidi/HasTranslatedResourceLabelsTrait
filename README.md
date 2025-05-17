@@ -53,6 +53,26 @@ static::__TextInput('name')->required()
 
 ## ✅ Full Example
 
+### ⛔️ Before (without the trait):
+
+```php
+return $form
+    ->schema([
+        TextInput::make('name')->required()->label(__('resources.products.fields.name')),
+        Textarea::make('description')->label(__('resources.products.fields.description')),
+        TextInput::make('price')->numeric()->required()->label(__('resources.products.fields.price')),
+        TextInput::make('stock')->numeric()->required()->label(__('resources.products.fields.stock')),
+        FileUpload::make('image')->directory('resources.products-images')->label(__('resources.products.fields.image')),
+        Select::make('owner_id')
+            ->relationship('owner', 'name')
+            ->searchable()
+            ->required()
+            ->label(__('resources.products.fields.owner_id')),
+    ]);
+```
+
+### ✅ After (with the trait):
+
 ### In `form()`:
 
 ```php
@@ -70,7 +90,19 @@ return $form
     ]);
 ```
 
-### In `table()`:
+### ⛔️ Before (without the trait):
+
+```php
+->columns([
+    TextColumn::make('name')->searchable()->sortable()->label(__('resources.products.fields.name')),
+    TextColumn::make('price')->money('OMR')->label(__('resources.products.fields.price')),
+    TextColumn::make('stock')->label(__('resources.products.fields.stock')),
+    TextColumn::make('owner.name')->searchable()->label(__('resources.products.fields.owner_id')),
+    ImageColumn::make('image')->disk('public')->label(__('resources.products.fields.image')),
+])
+```
+
+### ✅ After (with the trait):
 
 ```php
 ->columns([
@@ -81,6 +113,22 @@ return $form
     static::__ImageColumn('image')->disk('public'),
 ])
 ```
+
+---
+
+## ✅ Comparison Table
+
+| Feature                            | Before                                               | After with Trait                                |
+| ---------------------------------- | ---------------------------------------------------- | ----------------------------------------------- |
+| Labeling Form Fields               | `->label(__('resources.model.fields.field'))`        | Automatically injected via `__TextInput(...)`   |
+| Labeling Table Columns             | `->label(__('resources.model.fields.field'))`        | Automatically injected via `__TextColumn(...)`  |
+| Resource Label                     | `getLabel()`                                         | Automatically handled                           |
+| Plural Resource Label              | `getPluralLabel()`                                   | Automatically handled                           |
+| Navigation Label                   | `getNavigationLabel()`                               | Automatically handled                           |
+| Breadcrumb / Page Titles           | Manual per page                                      | Automatically resolved via translation keys     |
+| Relationship Field Label           | `->label(__('resources.model.fields.owner_id'))`     | Automatically mapped via `__Select(...)`        |
+| Works with Translatable Components | `TextInput`, `Textarea`, `Select`, `FileUpload`, etc | Same, but auto-labeled                          |
+| Developer Effort                   | High (manual per field/column/page)                  | Very Low (just call `__ComponentName('field')`) |
 
 ---
 
@@ -99,6 +147,31 @@ return $form
 | BadgeColumn  | `__BadgeColumn('field')`  |
 | ToggleColumn | `__ToggleColumn('field')` |
 | ImageColumn  | `__ImageColumn('field')`  |
+
+---
+
+## ✅ Automatically Handles Resource Labels
+
+Once the trait is used, you **no longer need to define** the following methods in your Resource:
+
+```php
+public static function getLabel(): string
+{
+    return __('resources.products.label');
+}
+
+public static function getPluralLabel(): string
+{
+    return __('resources.products.plural');
+}
+
+public static function getNavigationLabel(): string
+{
+    return __('resources.products.navigation.label');
+}
+```
+
+These are automatically resolved by the trait based on the model name.
 
 ---
 
@@ -147,9 +220,9 @@ return [
 
 ## ✅ Extra Features
 
-* `getLabel()`, `getPluralLabel()`, and `getNavigationLabel()` are automatically generated.
-* The trait converts model names into kebab-case and pluralizes them.
-* Warnings will be logged if a relationship is passed without specifying a subfield (e.g., `owner` instead of `owner.name`).
+* Automatically applies translations to fields, navigation menus, page titles, and breadcrumbs.
+* Converts model class name to kebab-case + plural to resolve translation keys.
+* Logs a warning if a relationship name is passed without specifying a subfield (e.g., `owner` instead of `owner.name`).
 
 ---
 
